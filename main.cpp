@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "include/Graph.h"
+#include "include\Graph.hpp"
 
 int main(int argc, char **argv)
 {

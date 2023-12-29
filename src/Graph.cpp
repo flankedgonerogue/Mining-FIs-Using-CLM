@@ -1,4 +1,4 @@
-#include "../include/Graph.h"
+#include "..\include\Graph.hpp"
 
 // PRIVATE FUNCTIONS
 
@@ -36,79 +36,13 @@ int Graph::mapNodeToPosition(const char node) const noexcept
     int i = 0;
     for (auto it = nodes.cbegin(); it != nodes.cend(); ++i, ++it)
     {
-        if (node == it->first)
+        if (node == it->label)
         {
             return i;
         }
     }
 
     return -1;
-}
-
-nlohmann::json Graph::toJSONObject() const noexcept
-{
-    nlohmann::json json;
-
-    json["transactions"] = transactions;
-
-    std::vector<nlohmann::json> nodesJSON;
-    for (const auto &[node, occurrence] : nodes)
-    {
-        nlohmann::json nodeJSON;
-
-        nodeJSON["node"] = std::string(1, node);
-        nodeJSON["occurrence"] = occurrence;
-
-        nodesJSON.push_back(nodeJSON);
-    }
-    json["nodes"] = nodesJSON;
-
-    std::vector<nlohmann::json> edgesJSON;
-    for (const auto &[fromNode, toNode, extraNodes, weight] : rawEdges)
-    {
-        nlohmann::json edgeJSON;
-
-        edgeJSON["fromNode"] = std::string(1, fromNode);
-        edgeJSON["toNode"] = std::string(1, toNode);
-
-        std::list<std::string> extraNodesStr;
-        for (const auto &node : extraNodes)
-        {
-            extraNodesStr.emplace_back(1, node);
-        }
-
-        edgeJSON["extraNodes"] = extraNodesStr;
-        edgeJSON["weight"] = weight;
-
-        edgesJSON.push_back(edgeJSON);
-    }
-    json["edges"] = edgesJSON;
-
-    nlohmann::json rowsCLMJSON;
-    std::vector<std::string> headers;
-    auto it = nodes.cbegin();
-    for (int i = 0; i < getNodesCount(); i++)
-    {
-        headers.emplace_back(1, it->first);
-
-        for (const auto &key : nodes | std::views::keys)
-        {
-            headers.emplace_back(1, key);
-        }
-
-        ++it;
-    }
-    rowsCLMJSON["header"] = headers;
-
-    it = nodes.cbegin();
-    for (const auto &row : CLM)
-    {
-        rowsCLMJSON[std::string(1, it->first)] = row;
-        ++it;
-    }
-    json["CLM"] = rowsCLMJSON;
-
-    return json;
 }
 
 
@@ -172,7 +106,7 @@ void Graph::processTransaction(const std::string &str)
     }
 
     // Save the history
-    jsonHistory.push_back(toJSONObject());
+    jsonHistory.emplace_back(*this);
 }
 
 void Graph::processCLM()
@@ -224,10 +158,6 @@ void Graph::processCLM()
     }
 }
 
-std::string Graph::getJSONHistoryAsJSON() const noexcept { return nlohmann::json(jsonHistory).dump(0); }
-
-std::string Graph::toJSON(const int indent) const noexcept { return toJSONObject().dump(0); }
-
 std::string Graph::toString() const noexcept
 {
     std::stringstream ss;
@@ -255,11 +185,11 @@ std::string Graph::toString() const noexcept
     auto it = nodes.cbegin();
     for (int i = 0; i < getNodesCount(); ++i, ++it)
     {
-        ss << it->first << ' ';
+        ss << it->label << ' ';
         ss << "| ";
-        for (const auto &key : nodes | std::views::keys)
+        for (const auto &[label, occurrence] : nodes)
         {
-            ss << key << ' ';
+            ss << label << ' ';
         }
         ss << "| ";
     }
@@ -269,7 +199,7 @@ std::string Graph::toString() const noexcept
 
     for (int i = 0; i < getNodesCount(); ++i, ++it)
     {
-        ss << "\t" << it->first << " | ";
+        ss << "\t" << it->label << " | ";
 
         int j = 0;
         for (const int &key : CLM[i])
