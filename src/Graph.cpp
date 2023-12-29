@@ -1,4 +1,4 @@
-#include "..\include\Graph.hpp"
+#include "../include/Graph.hpp"
 
 // PRIVATE FUNCTIONS
 
