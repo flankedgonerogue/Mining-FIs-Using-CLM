@@ -3,7 +3,7 @@
 
 #include "include/Graph.h"
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     if ((argc - 1) % 2 != 0)
     {
@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     }
 
     std::map<std::string, std::string> arguments;
-    for (int i = 1; i < argc; ++++i)
+    for (int i = 1; i < argc; ++ ++i)
     {
         arguments[std::string(argv[i])] = std::string(argv[i + 1]);
     }
@@ -45,7 +45,8 @@ int main(int argc, char** argv)
     {
         const size_t pos = transactions_str.find_first_of(' ', offset);
 
-        if (pos == std::string::npos) break;
+        if (pos == std::string::npos)
+            break;
 
         std::string temp;
         for (size_t i = offset; i < pos; ++i)
@@ -61,7 +62,7 @@ int main(int argc, char** argv)
     Graph graph;
 
     // Process all transactions
-    for (const std::string& transaction : transactions)
+    for (const std::string &transaction : transactions)
         graph.processTransaction(transaction);
 
     // Process the CLM after processing all transactions
@@ -87,7 +88,7 @@ int main(int argc, char** argv)
 
     if (!(arguments.contains("-history") && arguments.contains("-output")))
     {
-        std::cout << graph.toPrettyJSON();
+        std::cout << graph.toJSON(2);
     }
 
     return 0;
