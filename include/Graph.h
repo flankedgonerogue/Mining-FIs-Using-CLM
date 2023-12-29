@@ -8,7 +8,7 @@
 
 class Graph {
   std::list<std::string> transactions;
-  std::list<std::string> jsonHistory;
+  std::list<nlohmann::json> jsonHistory;
   std::list<std::pair<char, int>> nodes;
   std::list<std::tuple<char, char, std::list<char>, int>> rawEdges;
   std::vector<std::vector<int>> CLM;
@@ -36,6 +36,12 @@ class Graph {
    */
   [[nodiscard]] int mapNodeToPosition(char node) const noexcept;
 
+  /**
+   * \brief Returns an image of the graphs current state excluding json history
+   * \return A JSON object representing the graph
+   */
+  [[nodiscard]] nlohmann::json toJSONObject() const noexcept;
+
 public:
   /**
    * \brief Processes the passed string into the graph generating new nodes and
@@ -51,15 +57,14 @@ public:
   /**
    * \return The JSON history in chronological order (0 being the oldest)
    */
-  [[nodiscard]] std::list<std::string> getJSONHistory() const noexcept;
-
   [[nodiscard]] std::string getJSONHistoryAsJSON() const noexcept;
 
   /**
    * \brief Serializes all of the graph data excluding JSON history into a JSON
-   * string \return The JSON string
+   * nlohmann::json \return The JSON string
    */
   [[nodiscard]] std::string toJSON() const noexcept;
+  [[nodiscard]] std::string toPrettyJSON(const int indent = 2) const noexcept;
 
   /**
    * \brief Serializes all of the graph data excluding JSON history into a

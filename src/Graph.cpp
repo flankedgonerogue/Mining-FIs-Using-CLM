@@ -77,7 +77,7 @@ void Graph::processTransaction(const std::string &str) {
   }
 
   // Save the history
-  jsonHistory.push_back(toJSON());
+  jsonHistory.push_back(toJSONObject());
 }
 
 void Graph::processCLM() {
@@ -137,15 +137,21 @@ int Graph::mapNodeToPosition(const char node) const noexcept {
   return -1;
 }
 
-std::list<std::string> Graph::getJSONHistory() const noexcept {
-  return jsonHistory;
-}
-
 std::string Graph::getJSONHistoryAsJSON() const noexcept {
   return nlohmann::json(jsonHistory).dump(0);
 }
 
-std::string Graph::toJSON() const noexcept {
+std::string Graph::toJSON() const noexcept
+{
+  return toJSONObject().dump(0);
+}
+
+std::string Graph::toPrettyJSON(const int indent) const noexcept
+{
+  return toJSONObject().dump(indent);
+}
+
+nlohmann::json Graph::toJSONObject() const noexcept {
   nlohmann::json json;
 
   json["transactions"] = transactions;
@@ -201,7 +207,7 @@ std::string Graph::toJSON() const noexcept {
   }
   json["CLM"] = rowsCLMJSON;
 
-  return json.dump(0);
+  return json;
 }
 
 std::string Graph::toString() const noexcept {
