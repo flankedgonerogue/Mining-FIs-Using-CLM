@@ -33,10 +33,15 @@ int main(int argc, char **argv)
         std::cout << "Output file must be a json file!\n";
         return -3;
     }
+    if (arguments.contains("-image") && !arguments["-image"].ends_with(".json"))
+    {
+        std::cout << "Image file must be a json file!\n";
+        return -4;
+    }
     if (!arguments.contains("-transactions"))
     {
         std::cout << "No transactions provided!\n";
-        return -4;
+        return -5;
     }
 
     std::vector<std::string> transactions;
@@ -61,6 +66,16 @@ int main(int argc, char **argv)
 
     Graph graph;
 
+    // Set up graph from image file if specified
+    if (arguments.contains("-image"))
+    {
+        std::cout << "Image file specified, setting up graph from image!\n";
+        std::fstream fstream(arguments["-image"]);
+        if (!fstream.is_open())
+            return -6;
+        graph = nlohmann::json::parse(fstream).get<Graph>();
+    }
+
     // Process all transactions
     for (const std::string &transaction : transactions)
         graph.processTransaction(transaction);
@@ -72,7 +87,9 @@ int main(int argc, char **argv)
     if (arguments.contains("-history"))
     {
         std::ofstream fstream(arguments["-history"]);
-        fstream << graph.getJSONHistoryAsJSON();
+        if (!fstream.is_open())
+            return -7;
+        fstream << nlohmann::json(graph)["jsonHistory"];
         fstream.flush();
         fstream.close();
     }
@@ -81,14 +98,17 @@ int main(int argc, char **argv)
     if (arguments.contains("-output"))
     {
         std::ofstream fstream(arguments["-output"]);
-        fstream << graph.toJSON();
+        if (!fstream.is_open())
+            return -8;
+
+        fstream << nlohmann::json(graph);
         fstream.flush();
         fstream.close();
     }
 
     if (!(arguments.contains("-history") && arguments.contains("-output")))
     {
-        std::cout << graph.toJSON(2);
+        std::cout << nlohmann::json(graph).dump(2);
     }
 
     return 0;
