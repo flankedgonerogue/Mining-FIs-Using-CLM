@@ -7,10 +7,30 @@
 
 class Graph
 {
+    struct Node {
+      char label{};
+      uint occurrence{};
+
+      bool operator<(const Node & rhs) const {
+        return label < rhs.label;
+      }
+
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE(Node, label, occurrence);
+    };
+
+    struct Edge {
+      char from{};
+      char to{};
+      std::list<char> extraNodes;
+      uint occurrence{};
+
+      NLOHMANN_DEFINE_TYPE_INTRUSIVE(Edge, from, to, extraNodes, occurrence);
+    };
+
     std::list<std::string> transactions;
     std::list<nlohmann::json> jsonHistory;
-    std::list<std::pair<char, int>> nodes;
-    std::list<std::tuple<char, char, std::list<char>, int>> rawEdges;
+    std::list<Node> nodes;
+    std::list<Edge> rawEdges;
     std::vector<std::vector<int>> CLM;
 
     /**
@@ -35,13 +55,9 @@ class Graph
      */
     [[nodiscard]] int mapNodeToPosition(char node) const noexcept;
 
-    /**
-     * \brief Returns an image of the graphs current state excluding json history
-     * \return A JSON object representing the graph
-     */
-    [[nodiscard]] nlohmann::json toJSONObject() const noexcept;
-
 public:
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Graph, transactions, nodes, rawEdges, CLM, jsonHistory);
+
     /**
      * \brief Processes the passed string into the graph generating new nodes and
      * edges \param str The transaction to process
@@ -52,17 +68,6 @@ public:
      * \brief Processes the graph data to fill the CLM
      */
     void processCLM();
-
-    /**
-     * \return The JSON history in chronological order (0 being the oldest)
-     */
-    [[nodiscard]] std::string getJSONHistoryAsJSON() const noexcept;
-
-    /**
-     * \brief Serializes all of the graph data excluding JSON history into a JSON
-     * nlohmann::json \return The JSON string
-     */
-    [[nodiscard]] std::string toJSON(int indent = 0) const noexcept;
 
     /**
      * \brief Serializes all of the graph data excluding JSON history into a
