@@ -51,4 +51,15 @@ The script returns `code 0` if everything works fine.
 - Abdur Rahman Goraya (Graph, Edges, CLM, CLM-Miner, CPP API)
 - Syed Ahsan Naqvi (UI)
 - Mian Ali Ahmed (CLM-Miner?)
+- Course Instructor: Dr. Zahid Halim
+- Course Lab Instructor: Sir Usama Arshad
 ```
+
+## Based on
+This project is based on the paper
+> On the Efficient Representation of Datasets as Graphs to Mine Maximal Frequent Itemsets
+
+by
+- Zahid Halim, Senior Member, IEEE
+- Omer Ali
+- Muhammad Ghufran Khan
