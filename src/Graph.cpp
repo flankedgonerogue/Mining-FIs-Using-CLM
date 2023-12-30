@@ -204,7 +204,6 @@ std::list<std::string> Graph::processMFIs(const int minSup)
                     }
                 }
 
-                // TODO Convert positions into strings, if the positions are continous then convert to longer strings;
                 for (int j = 0; j < positions.size(); j++)
                 {
                     if (positions[j] == 0)
