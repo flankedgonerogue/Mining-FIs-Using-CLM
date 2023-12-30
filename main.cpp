@@ -149,9 +149,10 @@ int main(int argc, char **argv)
     {
         std::cout << graph.toString();
 
+        std::cout << "MFIs:\n";
         for (const auto& mfi : graph.processMFIs(minSupport))
         {
-            std::cout << mfi << '\n';
+            std::cout << '\t' << mfi << '\n';
         }
     }
 
