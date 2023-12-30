@@ -16,6 +16,8 @@
 
 `-image`: /path/to/image.json - Loads up the initial graph from a JSON image.
 
+`-minsup`: Minimum Support Threshold > 0, if an invalid value or no value is provided the program uses the default value i.e 2
+
 If neither `-output` and `-history` are provided then the script pretty-prints final graph image to console.
 
 ### Return codes

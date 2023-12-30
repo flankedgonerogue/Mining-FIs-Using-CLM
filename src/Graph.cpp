@@ -223,3 +223,74 @@ std::string Graph::toString() const noexcept
 
     return ss.str();
 }
+
+
+std::set<std::string> Graph::clmMiner(int minSup) {
+    std::set<std::string> mfis;  // Maximal Frequent Itemsets
+
+    // Iterate over all transactions
+    for (const std::string& transaction : this->transactions) {
+        // Iterate over all items in the transaction
+        for (char item : transaction) {
+            std::set<std::string> itemSet;
+            int itemIndex = this->mapNodeToPosition(item);
+
+            // Iterate over all other items to form pairs
+            for (const auto& otherNode : this->nodes) {
+                int otherItemIndex = this->mapNodeToPosition(otherNode.label);
+
+                // Make item pair with all other items
+                if (itemIndex != otherItemIndex) {
+                    itemSet.insert(std::string(1, item) + otherNode.label);
+                }
+            }
+
+            // Increment value in the CLM accordingly
+            for (const auto& pair : itemSet) {
+                int pairIndex =
+                    this->mapNodeToPosition(pair[1]) + this->mapNodeToPosition(pair[0]) * this->getNodesCount();
+                this->CLM[itemIndex][pairIndex]++;
+            }
+        }
+    }
+
+    // Extract Maximal Frequent Itemsets (MFIs)
+    for (auto it = this->nodes.begin(); it != this->nodes.end(); ++it) {
+        int itemIndex = this->mapNodeToPosition(it->label);
+
+        for (const auto& rowItem : this->nodes) {
+            int pairIndex = this->mapNodeToPosition(rowItem.label) +
+                            this->mapNodeToPosition(it->label) * this->getNodesCount();
+            if (this->CLM[itemIndex][pairIndex] > minSup) {
+                std::set<std::string> itemSet;
+                itemSet.insert(std::string(1, rowItem.label));
+                itemSet.insert(std::string(1, it->label));
+
+                auto start = it;
+                std::advance(start, 1);
+                for (; start != this->nodes.end(); ++start) {
+                    int index = this->mapNodeToPosition(start->label);
+                    if (this->CLM[itemIndex][index] > minSup) {
+                        itemSet.insert(std::string(1, start->label));
+                    }
+                }
+
+                // Add MFIs to the set
+                for (const auto& item : itemSet) {
+                    mfis.insert(item);
+                }
+            }
+        }
+    }
+
+
+
+    // Print or use the MFIs as needed
+    // std::cout << "Maximal Frequent Itemsets (MFIs): ";
+    // for (const auto& mfi : mfis) {
+    //     std::cout << mfi << " ";
+    // }
+    // std::cout << std::endl;
+
+    return mfis;
+}
