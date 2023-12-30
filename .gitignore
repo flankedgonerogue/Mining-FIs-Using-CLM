@@ -2,3 +2,7 @@
 /cmake-build-release
 /.idea
 ./Build
+/Build
+
+/Build
+.vscode
