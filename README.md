@@ -7,6 +7,8 @@
 -history history.json
 -transaction "ABCD FEDC ASIJ LSNQ ISNE"
 -image image.json
+-min-support 2
+-mfis-output mfi.json
 ```
 `-output`: /path/to/output.json - Stores the final image of the graph in this file.
 
@@ -16,19 +18,25 @@
 
 `-image`: /path/to/image.json - Loads up the initial graph from a JSON image.
 
+`-min-support`: minimum support value for MFIs.
+
+`-mfis-output`: /path/to/mfi.json - Stores MFIs calculated using `min-support` in this file.
+
 If neither `-output` and `-history` are provided then the script pretty-prints final graph image to console.
 
 ### Return codes
 ```text
  0 : Success
--1 : Invalid set of arguments
--2 : Bad history file
--3 : Bad output file
--4 : Bad image file
--5 : No transactions provided
--6 : Failed to open image file
--7 : Failed to open history file
--8 : Failed to open output file
+ 1 : Invalid set of arguments
+ 2 : Bad history file
+ 3 : Bad output file
+ 4 : Bad image file
+ 5 : No transactions provided
+ 6 : Failed to open image file
+ 7 : Failed to open history file
+ 8 : Failed to open output file
+ 9 : Bad min support number
+10 : Bad mfis output file
 ```
 
 ## Example

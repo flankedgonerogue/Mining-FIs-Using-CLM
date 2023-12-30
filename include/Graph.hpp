@@ -27,11 +27,14 @@ class Graph
       NLOHMANN_DEFINE_TYPE_INTRUSIVE(Edge, from, to, extraNodes, occurrence);
     };
 
+    int row_length;
+    int N;
     std::list<std::string> transactions;
     std::list<nlohmann::json> jsonHistory;
     std::list<Node> nodes;
     std::list<Edge> rawEdges;
-    std::vector<std::vector<int>> CLM;
+    std::map<std::string, int> itemsets;
+    std::map<char, std::vector<int>> CLM;
 
     /**
      * \brief Checks if the edge exists, if so, increments the weight
@@ -54,9 +57,10 @@ class Graph
      * \return The position of the node
      */
     [[nodiscard]] int mapNodeToPosition(char node) const noexcept;
+    [[nodiscard]] char mapPostionToNode(int node) const noexcept;
 
 public:
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Graph, transactions, nodes, rawEdges, CLM, jsonHistory);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Graph, transactions, nodes, rawEdges, itemsets, CLM, jsonHistory);
 
     /**
      * \brief Processes the passed string into the graph generating new nodes and
@@ -68,6 +72,13 @@ public:
      * \brief Processes the graph data to fill the CLM
      */
     void processCLM();
+
+    /**
+     * \brief Processes MFIs using the minSup
+     * \param minSup The minimum support count
+     * \return A list of MFIs that have support count above or equal to minSup
+     */
+    std::list<std::string> processMFIs(int minSup);
 
     /**
      * \brief Serializes all of the graph data excluding JSON history into a

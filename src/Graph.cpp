@@ -45,6 +45,20 @@ int Graph::mapNodeToPosition(const char node) const noexcept
     return -1;
 }
 
+char Graph::mapPostionToNode(const int node) const noexcept
+{
+    auto it = nodes.cbegin();
+    for (int i = 0; it != nodes.cend(); ++i, ++it)
+    {
+        if (node == i)
+        {
+            return it->label;
+        }
+    }
+
+    return -1;
+}
+
 
 // PUBLIC FUNCTIONS
 
@@ -74,14 +88,8 @@ void Graph::processTransaction(const std::string &str)
     nodes.sort();
 
     // Set up CLM
-    const int size_y = getNodesCount();
-    const int size_x = size_y * size_y + size_y;
-    CLM.resize(size_y);
-    for (auto &row : CLM)
-    {
-        row.clear();
-        row.resize(size_x, 0);
-    }
+    N = getNodesCount();
+    row_length = N * N + N;
 
     // Process edges
     for (int startIndex = 0; startIndex < (str.length() - 1); startIndex++)
@@ -111,8 +119,7 @@ void Graph::processTransaction(const std::string &str)
 
 void Graph::processCLM()
 {
-    std::map<std::string, int> itemsets;
-
+    // Generate all variations for itemsets
     std::list<std::string> variations;
     std::string _;
     for (const auto &str : transactions)
@@ -127,35 +134,98 @@ void Graph::processCLM()
         itemsets[variant]++;
     }
 
+    // Set up CLM
+    for (const auto &node : nodes)
+    {
+        CLM.emplace(node.label, std::vector<int>(row_length, 0));
+    }
+
+    // Fill up the CLM
     for (const auto &[item, frequency] : itemsets)
     {
         if (item.length() == 1)
         {
-            const int pos_y = mapNodeToPosition(item[0]);
-            const int pos_x = pos_y + pos_y * getNodesCount();
-            CLM[pos_y][pos_x] = frequency;
+            const int pos_x = mapNodeToPosition(item[0]) + mapNodeToPosition(item[0]) * getNodesCount();
+            CLM[item[0]][pos_x] = frequency;
         }
         else if (item.length() == 2)
         {
-            const int pos_y = mapNodeToPosition(item[0]);
             const int pos_x = mapNodeToPosition(item[1]) + mapNodeToPosition(item[1]) * getNodesCount();
 
-            CLM[pos_y][pos_x] = frequency;
+            CLM[item[0]][pos_x] = frequency;
         }
         else
         {
-            const char fromNode = item[0];
-            const char toNode = item[1];
+            const int pos_x = mapNodeToPosition(item[1]) + mapNodeToPosition(item[1]) * getNodesCount() +
+                mapNodeToPosition(item.back()) + 1;
 
-            const char lastNode = item.back();
-
-            const int pos_y = mapNodeToPosition(fromNode);
-            const int pos_x = mapNodeToPosition(toNode) + mapNodeToPosition(toNode) * getNodesCount() +
-                mapNodeToPosition(lastNode) + 1;
-
-            CLM[pos_y][pos_x] = frequency;
+            // Update frequency only if it's greater, do not reduce it.
+            if (CLM[item[0]][pos_x] < frequency)
+            {
+                CLM[item[0]][pos_x] = frequency;
+            }
         }
     }
+}
+
+std::list<std::string> Graph::processMFIs(const int minSup)
+{
+    std::list<std::string> MFIs;
+
+    // Iterate over each row
+    for (const auto &[label, row] : CLM)
+    {
+        // Iterate over major columns
+        for (int i = 0; i < row_length; i += (N + 1))
+        {
+            // If the major column support count is greater than the minimum support count, check the minor columns
+            if (row[i] >= minSup)
+            {
+                // Add the row and Major to MFI
+                std::string temp;
+                temp += label;
+                const char _ = mapPostionToNode(i % N);
+                if (_ == label)
+                {
+                    MFIs.push_back(temp);
+                    continue;
+                }
+                temp += _;
+
+                MFIs.push_back(temp);
+
+                std::vector<int> positions(N);
+                // Store positions of all minor columns greater than min support
+                for (int j = i + 1, k = 0; k < N; ++j, ++k)
+                {
+                    if (row[j] > minSup)
+                    {
+                        positions[k] = 1;
+                    }
+                }
+
+                // TODO Convert positions into strings, if the positions are continous then convert to longer strings;
+                for (int j = 0; j < positions.size(); j++)
+                {
+                    if (positions[j] == 0)
+                        continue;
+
+                    std::string _temp;
+                    _temp += mapPostionToNode(j);
+                    MFIs.push_back(temp + _temp);
+                    int k = j + 1;
+                    while (positions[k] == 1 && k < N)
+                    {
+                        _temp += mapPostionToNode(k);
+                        MFIs.push_back(temp + _temp);
+                        ++k;
+                    }
+                }
+            }
+        }
+    }
+
+    return MFIs;
 }
 
 std::string Graph::toString() const noexcept
@@ -202,7 +272,7 @@ std::string Graph::toString() const noexcept
         ss << "\t" << it->label << " | ";
 
         int j = 0;
-        for (const int &key : CLM[i])
+        for (const int &key : CLM.find(it->label)->second)
         {
             if (j == 1)
             {
