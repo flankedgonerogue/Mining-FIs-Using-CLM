@@ -9,7 +9,7 @@ class Graph
 {
     struct Node {
       char label{};
-      uint occurrence{};
+      size_t occurrence{};
 
       bool operator<(const Node & rhs) const {
         return label < rhs.label;
@@ -27,14 +27,11 @@ class Graph
       NLOHMANN_DEFINE_TYPE_INTRUSIVE(Edge, from, to, extraNodes, occurrence);
     };
 
-    int row_length;
-    int N;
-    std::list<std::string> transactions;
-    std::list<nlohmann::json> jsonHistory;
+    size_t maxNodes = 1;
+    size_t maxRowSize = maxNodes * maxNodes + maxNodes;
     std::list<Node> nodes;
-    std::list<Edge> rawEdges;
-    std::map<std::string, int> itemsets;
-    std::map<char, std::vector<int>> CLM;
+    std::list<Edge> edges;
+    std::map<char, std::vector<size_t>> CLM;
 
     /**
      * \brief Checks if the edge exists, if so, increments the weight
@@ -47,20 +44,20 @@ class Graph
     bool incrementIfRawEdgeExists(char fromNode, char toNode, const std::list<char> &extraNodes) noexcept;
 
     /**
-     * \return The number of nodes in the graph
-     */
-    [[nodiscard]] int getNodesCount() const noexcept;
-
-    /**
      * \brief Maps node to an integer postion to use for building CLM
      * \param node The node to map
      * \return The position of the node
      */
-    [[nodiscard]] int mapNodeToPosition(char node) const noexcept;
-    [[nodiscard]] char mapPostionToNode(int node) const noexcept;
+    [[nodiscard]] size_t mapNodeToPosition(char node) const noexcept;
+    [[nodiscard]] char mapPostionToNode(size_t node) const noexcept;
 
 public:
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Graph, transactions, nodes, rawEdges, itemsets, CLM, jsonHistory);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Graph, nodes, edges, CLM);
+
+    explicit Graph(const size_t maxNodes): maxNodes(maxNodes) {}
+    Graph() = default;
+
+    void setMaxNodes(size_t maxNodes) noexcept;
 
     /**
      * \brief Processes the passed string into the graph generating new nodes and
@@ -69,16 +66,11 @@ public:
     void processTransaction(const std::string &str);
 
     /**
-     * \brief Processes the graph data to fill the CLM
-     */
-    void processCLM();
-
-    /**
-     * \brief Processes MFIs using the minSup
-     * \param minSup The minimum support count
-     * \return A list of MFIs that have support count above or equal to minSup
-     */
-    std::list<std::string> processMFIs(int minSup);
+ * \brief Processes FIs above the minimum support using the CLM Miner algorithm
+ * \param minSup The minimum support count
+ * \return A list of FIs that have support count above or equal to minSup after using the CLM Miner
+ */
+    std::list<std::string> useCLM_Miner(int minSup);
 
     /**
      * \brief Serializes all of the graph data excluding JSON history into a

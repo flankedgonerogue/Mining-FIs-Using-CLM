@@ -65,6 +65,30 @@ int main(int argc, char **argv)
         }
     }
 
+    int maxNodes;
+    if (arguments.contains("-max-nodes"))
+    {
+        try
+        {
+            maxNodes = std::stoi(arguments["-max-nodes"]);
+
+            if (maxNodes < 1)
+            {
+                throw std::exception();
+            }
+        } catch (std::exception& _)
+        {
+            std::cout << "Max nodes is not a valid number!\n";
+            std::cout << _.what();
+
+            return 11;
+        }
+    } else
+    {
+        std::cout << "Max nodes not provided!\n";
+        return 12;
+    }
+
     std::vector<std::string> transactions;
     const std::string transactions_str = arguments["-transactions"];
     for (size_t offset = 0; offset < transactions_str.length();)
@@ -84,7 +108,7 @@ int main(int argc, char **argv)
         offset = pos + 1;
     }
 
-    Graph graph;
+    Graph graph(maxNodes);
 
     // Set up graph from image file if specified
     if (arguments.contains("-image"))
@@ -94,6 +118,7 @@ int main(int argc, char **argv)
         if (!fstream.is_open())
             return 6;
         graph = nlohmann::json::parse(fstream).get<Graph>();
+        graph.setMaxNodes(maxNodes);
     }
 
     // Process all transactions
@@ -101,9 +126,6 @@ int main(int argc, char **argv)
     {
         graph.processTransaction(transaction);
     }
-
-    // Process the CLM after processing all transactions
-    graph.processCLM();
 
     // Output history to file
     if (arguments.contains("-history"))
@@ -130,29 +152,30 @@ int main(int argc, char **argv)
 
     if (minSupport != -1)
     {
-        if (arguments.contains("-mfis-output"))
+        if (arguments.contains("-fis-output"))
         {
-            std::ofstream fstream(arguments["-mfis-output"]);
+            std::ofstream fstream(arguments["-fis-output"]);
             if (!fstream.is_open())
                 return 10;
 
-            fstream << nlohmann::json(graph.processMFIs(minSupport));
+            fstream << nlohmann::json(graph.useCLM_Miner(minSupport));
             fstream.flush();
             fstream.close();
         } else
         {
-            std::cout << "No MFIs output file specified\n";
+            std::cout << "No FIs output file specified\n";
         }
     }
 
-    if (!(arguments.contains("-history") && arguments.contains("-output") && arguments.contains("-mfis-output")))
+    if (!(arguments.contains("-history") && arguments.contains("-output") && arguments.contains("-fis-output")))
     {
+        const auto& FIs = graph.useCLM_Miner(minSupport);
         std::cout << graph.toString();
 
-        std::cout << "MFIs:\n";
-        for (const auto& mfi : graph.processMFIs(minSupport))
+        std::cout << "FIs:\n";
+        for (const auto& FI : FIs)
         {
-            std::cout << '\t' << mfi << '\n';
+            std::cout << '\t' << FI << '\n';
         }
     }
 

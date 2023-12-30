@@ -37,6 +37,8 @@ If neither `-output` and `-history` are provided then the script pretty-prints f
  8 : Failed to open output file
  9 : Bad min support number
 10 : Bad mfis output file
+11 : Bad max nodes count
+12 : Max nodes not specified
 ```
 
 ## Example
