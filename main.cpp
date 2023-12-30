@@ -21,7 +21,39 @@ int main(int argc, char **argv)
      * -history json file to store history in
      * -transactions list of input transactions
      * -output json file to store final graph output in
+     * -minsup minimum support index (if not provided the default value is 2)
      */
+
+    // Minimum support threshold
+    int minSup = 2;
+
+    if (!arguments.contains("-minsup"))
+    {
+        std::cout<<"Value for Minimum Support Threshold not provided!\nUsind the default value: 2\n";
+
+    }
+    else if (arguments.contains("-minsup") && (arguments["-minsup"].empty()))
+    {
+        std::cout<<"Invalid value for Minimum Support Threshold provided!\nUsind the default value: 2\n";
+
+    }
+    else
+    {
+        try {
+
+            minSup = std::stoi(arguments["-minsup"]);
+            if (minSup < 0)
+            {
+                minSup = 2;
+                std::cout << "Invalid value for Minimum Support Threshold provided!\nUsing the default value: 2\n";
+            }
+
+        } catch (const std::invalid_argument& e) {
+
+            std::cout << "Invalid value for Minimum Support Threshold provided!\nUsing the default value: 2\n";
+        
+        }
+    }
 
     if (arguments.contains("-history") && !arguments["-history"].ends_with(".json"))
     {
@@ -65,6 +97,7 @@ int main(int argc, char **argv)
     }
 
     Graph graph;
+
 
     // Set up graph from image file if specified
     if (arguments.contains("-image"))
@@ -110,6 +143,18 @@ int main(int argc, char **argv)
     {
         std::cout << nlohmann::json(graph).dump(2);
     }
+
+    //Maximal Frequent Itemsets
+    auto MFIS = graph.clmMiner(minSup);
+
+    //Printing the MFIs
+    std::cout << "\n\tMinimum Support Threshold: " << minSup;
+    std::cout << "\n\tMaximal Frequent Itemsets (MFIs): ";
+    for (const auto& mfi : MFIS) {
+        std::cout << mfi << " ";
+    }
+    std::cout << std::endl;
+
 
     return 0;
 }

@@ -4,6 +4,7 @@
 #include <list>
 #include <string>
 #include "json.hpp"
+#include <set>
 
 class Graph
 {
@@ -68,6 +69,7 @@ public:
      * \brief Processes the graph data to fill the CLM
      */
     void processCLM();
+    std::set<std::string> clmMiner(int);
 
     /**
      * \brief Serializes all of the graph data excluding JSON history into a
