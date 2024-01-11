@@ -22,7 +22,7 @@ class Graph
       char from{};
       char to{};
       std::list<char> extraNodes;
-      uint occurrence{};
+      size_t occurrence{};
 
       NLOHMANN_DEFINE_TYPE_INTRUSIVE(Edge, from, to, extraNodes, occurrence);
     };

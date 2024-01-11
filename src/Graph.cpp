@@ -72,14 +72,6 @@ void Graph::processTransaction(const std::string &str)
             nodes.emplace_back(it, 1);
         }
     }
-    nodes.sort();
-
-    // Set up CLM
-    for (const auto &[label, occurrence] : nodes)
-    {
-        if (!CLM.contains(label))
-            CLM.emplace(label, std::vector<size_t>(maxRowSize, 0));
-    }
 
     // Process edges
     for (int startIndex = 0; startIndex < (str.length() - 1); startIndex++)
@@ -96,7 +88,18 @@ void Graph::processTransaction(const std::string &str)
                 extraNodes.push_back(str[i]);
             }
 
-            if (!incrementIfRawEdgeExists(fromNode, toNode, extraNodes))
+            bool found = false;
+            for (auto &[existingFromNode, existingToNode, existingExtraNodes, existingWeight] : edges)
+            {
+                if (existingFromNode == fromNode && existingToNode == toNode && existingExtraNodes == extraNodes)
+                {
+                    ++existingWeight;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
             {
                 edges.emplace_back(fromNode, toNode, extraNodes, 1);
             }
@@ -106,7 +109,15 @@ void Graph::processTransaction(const std::string &str)
 
 std::list<std::string> Graph::useCLM_Miner(const int minSup)
 {
-    // Process CLM
+    // Set up CLM
+    nodes.sort();
+    for (const auto &[label, occurrence] : nodes)
+    {
+        if (!CLM.contains(label))
+            CLM.emplace(label, std::vector<size_t>(maxRowSize, 0));
+    }
+
+    // Fill CLM
     // Update the individual nodes
     for (const auto &[label, occurrence] : nodes)
     {
@@ -128,7 +139,7 @@ std::list<std::string> Graph::useCLM_Miner(const int minSup)
     std::list<std::string> FIs;
 
     // Iterate over each row
-    for (const auto &[label, row] : CLM)
+    for (auto &[label, row] : CLM)
     {
         // Iterate over major columns
         for (size_t i = 0; i < maxRowSize; i += (maxNodes + 1))
@@ -136,7 +147,7 @@ std::list<std::string> Graph::useCLM_Miner(const int minSup)
             // If the major column support count is greater than the minimum support count, check the minor columns
             if (row[i] >= minSup)
             {
-                // Add the row and Major to MFI
+                // Add the row and major column to FIs
                 std::string temp;
                 temp += label;
                 const char _ = mapPostionToNode(i % maxNodes);
@@ -149,26 +160,28 @@ std::list<std::string> Graph::useCLM_Miner(const int minSup)
 
                 FIs.push_back(temp);
 
-                std::vector positions(maxNodes, false);
-                // Store positions of all minor columns greater than min support
-                for (size_t j = i + 1, k = 0; k < maxNodes; ++j, ++k)
+                std::string _temp;
+                size_t j = maxNodes + i; // Starting from the final minor column
+                while (j > i)
                 {
-                    positions[k] = row[j] > minSup;
-                }
-
-                for (size_t j = 0; j < positions.size(); j++)
-                {
-                    if (!positions[j])
-                        continue;
-
-                    std::string _temp;
-                    _temp += mapPostionToNode(j);
-                    FIs.push_back(temp + _temp);
-                    for (size_t k = j + 1; positions[k] && k < maxNodes; ++k)
+                    if (row[j] >= minSup)
                     {
-                        _temp += mapPostionToNode(k);
+                        // Add Row + Major Col + Minor Col to FIs
+                        _temp = mapPostionToNode(j - i - 1);
                         FIs.push_back(temp + _temp);
+
+                        // TODO FIX for FIs greater than 3-items
+                        size_t k = j - 1;
+                        size_t colMinSup = row[j];
+                        while (colMinSup >= minSup && row[k] >= minSup)
+                        {
+                            _temp.insert(0, 1, mapPostionToNode(k - i - 1));
+                            FIs.push_back(temp + _temp);
+                            colMinSup--;
+                            k--;
+                        }
                     }
+                    j--;
                 }
             }
         }
@@ -201,34 +214,30 @@ std::string Graph::toString() const noexcept
     }
 
     ss << "CLM: \n\t  | ";
-    auto it = nodes.cbegin();
-    for (int i = 0; i < maxNodes; ++i, ++it)
+    for (const auto& [label, occurrence] : nodes)
     {
-        ss << it->label << ' ';
-        ss << "| ";
-        for (const auto &[label, occurrence] : nodes)
+        ss << label << " | ";
+        for (const auto& [label, occurrence] : nodes)
         {
-            ss << label << ' ';
+            ss << label << " ";
         }
         ss << "| ";
     }
-    ss << "\n";
+    ss << '\n';
 
-    it = nodes.cbegin();
-
-    for (int i = 0; i < maxNodes; ++i, ++it)
+    for (const auto& [label, row] : CLM)
     {
-        ss << "\t" << it->label << " | ";
+        ss << '\t' << label << " | ";
 
         int j = 0;
-        for (const size_t &key : CLM.find(it->label)->second)
+        for (const auto& val : row)
         {
             if (j == 1)
             {
                 ss << "| ";
             }
 
-            ss << key << ' ';
+            ss << val << ' ';
 
             j++;
             if (j == (maxNodes + 1))
@@ -237,7 +246,8 @@ std::string Graph::toString() const noexcept
                 j = 0;
             }
         }
-        ss << "\n";
+
+        ss << '\n';
     }
 
     return ss.str();
