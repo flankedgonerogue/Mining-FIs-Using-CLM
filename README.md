@@ -3,12 +3,16 @@
 ## Interacting with the CPP part
 ### Required command-line arguments
 `transactions`: the input transactions
+
 `max-nodes`: the maximum number of nodes in the universe transactions
+
 `min-support`: the minimum support number to find valid FIs
 
 ### Optional command-line arguments
 `graph-output`: the JSON file to store graph output in
+
 `fis-output`: the JSON file to store FIs found using `min-support` in
+
 `image`: the initial image JSON file to load the graph from, this should be an instance of JSON using the `output` argument.
 
 ### Return codes
