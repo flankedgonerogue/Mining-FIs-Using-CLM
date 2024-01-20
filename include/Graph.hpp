@@ -1,82 +1,89 @@
-#ifndef GRAPH_H
-#define GRAPH_H
+#ifndef GRAPH_HPP
+#define GRAPH_HPP
 
-#include <list>
-#include <string>
-#include "json.hpp"
+#include <map>
+#include <sstream>
+#include <vector>
 
 class Graph
 {
-    struct Node {
-      char label{};
-      size_t occurrence{};
-
-      bool operator<(const Node & rhs) const {
-        return label < rhs.label;
-      }
-
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE(Node, label, occurrence);
-    };
-
-    struct Edge {
-      char from{};
-      char to{};
-      std::list<char> extraNodes;
-      size_t occurrence{};
-
-      NLOHMANN_DEFINE_TYPE_INTRUSIVE(Edge, from, to, extraNodes, occurrence);
-    };
-
-    size_t maxNodes = 1;
-    size_t maxRowSize = maxNodes * maxNodes + maxNodes;
-    std::list<Node> nodes;
-    std::list<Edge> edges;
-    std::map<char, std::vector<size_t>> CLM;
-
-    /**
-     * \brief Checks if the edge exists, if so, increments the weight
-     * \param fromNode The from node
-     * \param toNode The to node
-     * \param extraNodes The extra nodes
-     * \return True if the weight was incremented otherwise false if edge was not
-     * found
-     */
-    bool incrementIfRawEdgeExists(char fromNode, char toNode, const std::list<char> &extraNodes) noexcept;
-
-    /**
-     * \brief Maps node to an integer postion to use for building CLM
-     * \param node The node to map
-     * \return The position of the node
-     */
-    [[nodiscard]] size_t mapNodeToPosition(char node) const noexcept;
-    [[nodiscard]] char mapPostionToNode(size_t node) const noexcept;
+    int maxSize;
+    int maxRowSize;
+    std::map<char, std::vector<int>> CLM;
 
 public:
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Graph, nodes, edges, CLM);
+    explicit Graph(const int maxSize) : maxSize(maxSize), maxRowSize(maxSize * maxSize + maxSize)
+    {
+        for (int i = 0; i < maxSize; ++i)
+        {
+            CLM.emplace(65 + i, maxRowSize);
+        }
+    }
 
-    explicit Graph(const size_t maxNodes): maxNodes(maxNodes) {}
-    Graph() = default;
+    void processTransaction(const std::string &str)
+    {
+        for (int startIndex = 0; startIndex < str.length(); ++startIndex)
+        {
+            const char startChar = str[startIndex];
+            const int startCharPos = (startChar % 65) * (maxSize + 1);
+            CLM[startChar][startCharPos]++;
 
-    void setMaxNodes(size_t maxNodes) noexcept;
+            for (int offsetIndex = startIndex + 1; offsetIndex < str.length(); ++offsetIndex)
+            {
+                const int endCharOffset = str[offsetIndex] % 65 * (maxSize + 1);
+                CLM[startChar][endCharOffset]++;
 
-    /**
-     * \brief Processes the passed string into the graph generating new nodes and
-     * edges \param str The transaction to process
-     */
-    void processTransaction(const std::string &str);
+                for (int i = offsetIndex + 1; i < str.length(); ++i)
+                {
+                    CLM[startChar][endCharOffset + str[i] % 65 + 1]++;
+                }
+            }
+        }
+    }
 
-    /**
- * \brief Processes FIs above the minimum support using the CLM Miner algorithm
- * \param minSup The minimum support count
- * \return A list of FIs that have support count above or equal to minSup after using the CLM Miner
- */
-    std::list<std::string> useCLM_Miner(int minSup);
+    [[nodiscard]] std::string toString() const noexcept
+    {
+        std::stringstream ss;
 
-    /**
-     * \brief Serializes all of the graph data excluding JSON history into a
-     * string \return The resultant string
-     */
-    [[nodiscard]] std::string toString() const noexcept;
+        ss << "CLM: \n\t  | ";
+        for (int i = 0; i < maxSize; ++i)
+        {
+            ss << static_cast<char>(65 + i) << " | ";
+            for (int j = 0; j < maxSize; ++j)
+            {
+                ss << static_cast<char>(65 + j) << " ";
+            }
+            ss << "| ";
+        }
+        ss << '\n';
+
+        for (const auto& [label, row] : CLM)
+        {
+            ss << '\t' << label << " | ";
+
+            int j = 0;
+            for (const auto& val : row)
+            {
+                if (j == 1)
+                {
+                    ss << "| ";
+                }
+
+                ss << val << ' ';
+
+                j++;
+                if (j == (maxSize + 1))
+                {
+                    ss << "| ";
+                    j = 0;
+                }
+            }
+
+            ss << '\n';
+        }
+
+        return ss.str();
+    }
 };
 
-#endif // GRAPH_H
+#endif //GRAPH_HPP
